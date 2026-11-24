@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script>window.STATIC_DATA="data.json";</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Leonida Reloaded — Stream</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Unbounded:wght@500;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* Leonida Reloaded solo stream scene — 1920x1080 stage scaled to fit.
+   OBS: Browser Source -> http://localhost:8787/leonida.html, 1920 x 1080. */
+:root{
+  --bg:#08060a; --glass:rgba(255,255,255,.05); --stroke:rgba(255,255,255,.1);
+  --ink:#f8f4ee; --muted:#a39a8e; --dim:#62594f;
+  --c:#ffb21e; --c2:#ff7a2f; --hot:#ff3d8b;
+  --open:#3ddc84; --merged:#a678ff; --closed:#ff5c69;
+  --ease:cubic-bezier(.2,.8,.2,1); --spring:cubic-bezier(.34,1.56,.64,1);
+  --tc:var(--c);
+}
+*{box-sizing:border-box;margin:0}
+html,body{width:100%;height:100%;background:var(--bg);overflow:hidden;cursor:none}
+body{color:var(--ink);font:20px/1.4 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+#stage{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:center;overflow:hidden;background:var(--bg)}
+
+.aurora{position:absolute;inset:-300px;filter:blur(120px) saturate(150%);opacity:.5}
+.aurora i{position:absolute;width:1100px;height:1100px;border-radius:50%;mix-blend-mode:screen;animation:drift 30s var(--ease) infinite alternate}
+.aurora i:nth-child(1){background:radial-gradient(circle,var(--c),transparent 60%);left:0;top:-150px}
+.aurora i:nth-child(2){background:radial-gradient(circle,var(--c2),transparent 60%);right:-100px;top:250px;animation-duration:38s;animation-delay:-10s}
+.aurora i:nth-child(3){background:radial-gradient(circle,var(--hot),transparent 60%);left:800px;bottom:-350px;animation-duration:44s;animation-delay:-20s;opacity:.6}
+@keyframes drift{0%{transform:translate(0,0) scale(1)}50%{transform:translate(160px,-120px) scale(1.15)}100%{transform:translate(-120px,140px) scale(.9)}}
+.gridlines{position:absolute;inset:0;background-image:linear-gradient(var(--stroke) 1px,transparent 1px),linear-gradient(90deg,var(--stroke) 1px,transparent 1px);background-size:80px 80px;mask-image:radial-gradient(ellipse at 50% 0%,#000 0%,transparent 75%);opacity:.4}
+.vignette{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.6));pointer-events:none}
+
+.glass{background:var(--glass);border:1px solid var(--stroke);border-radius:24px;backdrop-filter:blur(20px) saturate(140%);position:relative}
+.glass::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;pointer-events:none;background:linear-gradient(160deg,rgba(255,255,255,.2),transparent 40%);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
+.lbl{font:700 15px "JetBrains Mono",monospace;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:12px}
+.lbl .live{font-size:12px;padding:2px 9px;border-radius:99px;color:var(--c);border:1px solid color-mix(in srgb,var(--c) 50%,transparent);letter-spacing:.12em}
+
+.main{position:absolute;left:44px;right:44px;top:34px;bottom:78px;display:grid;grid-template-rows:96px 318px 176px 1fr;gap:20px}
+
+/* top */
+.top{display:flex;align-items:center;justify-content:space-between}
+h1{font:800 60px/1 Unbounded,sans-serif;letter-spacing:-.035em}
+h1 .grad{background:linear-gradient(100deg,#ffe27a,var(--c) 35%,var(--c2) 70%,var(--hot));background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shimmer 8s ease-in-out infinite alternate}
+@keyframes shimmer{to{background-position:100% 0}}
+.sub{font:600 17px "JetBrains Mono",monospace;letter-spacing:.14em;color:var(--muted);margin-top:8px;text-transform:uppercase}
+.right{display:flex;gap:14px;align-items:center}
+.pill{display:flex;align-items:center;gap:12px;padding:12px 20px;border-radius:99px;font:700 18px "JetBrains Mono",monospace;letter-spacing:.1em}
+.onair{background:rgba(255,92,105,.14);border:1px solid rgba(255,92,105,.45);color:var(--closed)}
+.onair .dot{width:12px;height:12px;border-radius:50%;background:var(--closed);position:relative}
+.onair .dot::after{content:"";position:absolute;inset:-7px;border-radius:50%;border:2px solid var(--closed);animation:ping 1.6s var(--ease) infinite}
+.onair.off{background:var(--glass);border-color:var(--stroke);color:var(--muted)} .onair.off .dot{background:var(--dim)} .onair.off .dot::after{display:none}
+@keyframes ping{from{transform:scale(.4);opacity:1}to{transform:scale(1.7);opacity:0}}
+.clockp{background:var(--glass);border:1px solid var(--stroke)}
+
+/* hero row */
+.hero{display:grid;grid-template-columns:760px 1fr;gap:20px}
+.card{padding:28px 32px;display:grid;grid-template-columns:250px 1fr;gap:34px;align-items:center;overflow:hidden;transition:box-shadow .8s}
+.card.ping{box-shadow:0 0 0 2px var(--c),0 0 90px -10px var(--c)}
+.card .glow{position:absolute;width:520px;height:520px;border-radius:50%;background:radial-gradient(circle,var(--c),transparent 65%);opacity:.2;top:-260px;left:-160px}
+.ring{width:250px;height:250px;position:relative}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring circle{fill:none;stroke-width:13}
+.ring .bgc{stroke:var(--stroke)}
+.ring .fg{stroke:url(#rg);stroke-linecap:round;transition:stroke-dashoffset 1.8s var(--ease);filter:drop-shadow(0 0 14px var(--c))}
+.ring .pct{position:absolute;inset:0;display:grid;place-items:center;text-align:center}
+.ring .pct b{font:800 62px/1 Unbounded,sans-serif;letter-spacing:-.04em}
+.ring .pct b small{font-size:26px;color:var(--muted)}
+.ring .pct .cap{display:block;font:600 13px "JetBrains Mono",monospace;letter-spacing:.18em;color:var(--muted);margin-top:6px}
+.info{display:flex;flex-direction:column;gap:14px;min-width:0}
+.info .k{font:700 13px "JetBrains Mono",monospace;letter-spacing:.18em;color:var(--muted);text-transform:uppercase}
+.info .stage{font:700 40px/1.05 Unbounded,sans-serif;letter-spacing:-.03em;color:var(--c)}
+.info .head{font-size:21px;line-height:1.35;opacity:.92}
+.chips{display:flex;gap:10px;flex-wrap:wrap}
+.chip{font:600 15px "JetBrains Mono",monospace;padding:6px 12px;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid var(--stroke);color:var(--muted)}
+.chip b{color:var(--ink);font-family:Unbounded,sans-serif;font-size:17px;margin-right:6px}
+
+.build{padding:24px 28px;display:grid;grid-template-columns:400px 1fr;grid-template-rows:auto 1fr;gap:16px 26px}
+.build .lbl{grid-column:1/-1}
+.runstate{margin-left:auto;font-size:13px;letter-spacing:.14em;padding:3px 12px;border-radius:99px;border:1px solid var(--stroke);color:var(--muted)}
+.runstate.on{color:var(--open);border-color:color-mix(in srgb,var(--open) 50%,transparent);background:color-mix(in srgb,var(--open) 12%,transparent)}
+.runstate.on::before{content:"● "}
+.frame{display:flex;flex-direction:column;gap:8px;min-height:0}
+.shot{position:relative;width:400px;height:225px;border-radius:14px;overflow:hidden;background:#000;border:1px solid var(--stroke);box-shadow:inset 0 0 40px rgba(0,0,0,.8)}
+.shot img{width:100%;height:100%;object-fit:cover;display:block;transition:opacity .6s}
+.shot::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,.18) 0 2px,transparent 2px 4px);pointer-events:none}
+.noframe{position:absolute;inset:0;display:grid;place-items:center;font:600 14px "JetBrains Mono",monospace;color:var(--dim)}
+.ftag{position:absolute;left:10px;top:10px;z-index:1;font:700 12px "JetBrains Mono",monospace;letter-spacing:.1em;padding:3px 9px;border-radius:8px;background:rgba(0,0,0,.7);color:var(--muted);text-transform:uppercase}
+.ftag.image{background:var(--open);color:#04140a}
+.fcap{font:13px "JetBrains Mono",monospace;color:var(--muted)}
+.stats{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto auto 1fr;gap:16px 24px;min-width:0}
+.st .s{font:14px "JetBrains Mono",monospace;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cache{grid-column:1/-1;align-self:end;display:grid;grid-template-columns:auto 1fr auto auto;gap:14px;align-items:center;font:13px "JetBrains Mono",monospace;color:var(--muted)}
+.cache .bigbar{height:8px}
+.cache b{color:var(--ink);font-weight:600}
+.st .k{font-size:15px;color:var(--muted)}
+.st .v{font:800 30px Unbounded,sans-serif;letter-spacing:-.03em;margin-top:2px;white-space:nowrap}
+.st .v small{font-size:17px;color:var(--muted);font-weight:500}
+.okc{color:var(--open)} .badc{color:var(--closed)}
+.bigbar{grid-column:1/-1;height:16px;border-radius:9px;background:var(--stroke);overflow:hidden;position:relative}
+.bigbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--c),#ffd36e);border-radius:9px;transition:width 1.8s var(--ease);position:relative;overflow:hidden;box-shadow:0 0 20px var(--c)}
+.bigbar i::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.6),transparent);transform:translateX(-100%);animation:sweep 2.4s var(--ease) infinite}
+@keyframes sweep{to{transform:translateX(100%)}}
+.term{grid-column:1/-1;align-self:end;font:15px/1.6 "JetBrains Mono",monospace;color:var(--muted);background:rgba(0,0,0,.45);border:1px solid var(--stroke);border-radius:14px;padding:12px 16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.term::before{content:"$ ";color:var(--c)}
+.cur{display:inline-block;width:9px;height:17px;background:var(--c);vertical-align:-3px;margin-left:4px;animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:0}}
+
+/* roadmap */
+.road{padding:24px 40px 26px}
+.road .lbl{margin-bottom:22px}
+.track{position:relative;display:grid;grid-template-columns:repeat(9,1fr)}
+.track .line{position:absolute;left:calc(100%/18);right:calc(100%/18);top:23px;height:4px;background:var(--stroke);border-radius:4px}
+.track .line i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--c),var(--c2));border-radius:4px;box-shadow:0 0 14px var(--c);transition:width 1.8s var(--ease)}
+.node{position:relative;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
+.node .dot{width:50px;height:50px;border-radius:50%;display:grid;place-items:center;background:#15110d;border:3px solid var(--stroke);font:700 16px "JetBrains Mono",monospace;color:var(--muted);position:relative;z-index:1;transition:all .8s var(--ease)}
+.node.done .dot{background:var(--c);border-color:var(--c);color:#1a1205;box-shadow:0 0 24px -2px var(--c)}
+.node.now .dot{border-color:var(--c);color:var(--c);background:conic-gradient(var(--c) var(--p),#15110d 0);box-shadow:0 0 0 6px color-mix(in srgb,var(--c) 18%,transparent)}
+.node.now .dot span{position:absolute;inset:5px;border-radius:50%;background:#15110d;display:grid;place-items:center;font-size:13px}
+.node.now .dot::after{content:"";position:absolute;inset:-10px;border-radius:50%;border:2px solid var(--c);animation:ping 2s var(--ease) infinite}
+.node .nm{font:600 17px Inter,sans-serif}
+.node.todo .nm{color:var(--dim)}
+.node.now .nm{color:var(--c)}
+.node.part .dot{border-color:color-mix(in srgb,var(--c) 55%,transparent);color:var(--ink);background:conic-gradient(color-mix(in srgb,var(--c) 75%,transparent) var(--p),#15110d 0)}
+.node.part .dot span{position:absolute;inset:5px;border-radius:50%;background:#15110d;display:grid;place-items:center;font-size:12px}
+
+/* bottom */
+.bottom{display:grid;grid-template-columns:1.25fr 1fr;gap:20px;min-height:0}
+.panel{padding:24px 28px;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.panel .lbl{margin-bottom:14px}
+.list{display:grid;gap:8px;align-content:start;overflow:hidden;flex:1;mask-image:linear-gradient(#000 82%,transparent)}
+.row{display:grid;grid-template-columns:30px 1fr auto;gap:14px;align-items:center;padding:10px 14px;border-radius:14px;background:rgba(255,255,255,.035);border:1px solid var(--stroke)}
+.row svg{width:24px;height:24px}
+.row .tt{font-size:18px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .mm{font:14px "JetBrains Mono",monospace;color:var(--muted);white-space:nowrap}
+.row.new{animation:arrive 1.2s var(--spring) both}
+@keyframes arrive{0%{opacity:0;transform:translateY(-18px) scale(.97);box-shadow:0 0 0 1px var(--c),0 0 40px -6px var(--c)}100%{opacity:1;transform:none}}
+.tag{font:700 11px "JetBrains Mono",monospace;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:99px;color:var(--sc);background:color-mix(in srgb,var(--sc) 16%,transparent);margin-right:8px}
+.s-merged{--sc:var(--merged)} .s-commit{--sc:var(--muted)} .s-note{--sc:var(--c)}
+.notes .ev{display:grid;grid-template-columns:14px 1fr;gap:14px;padding:9px 0}
+.notes .ev .nd{width:12px;height:12px;border-radius:50%;background:var(--c);margin-top:7px;box-shadow:0 0 0 4px color-mix(in srgb,var(--c) 22%,transparent)}
+.notes .ev .tx{font-size:18px;line-height:1.35}
+.notes .ev .mm{font:14px "JetBrains Mono",monospace;color:var(--muted);margin-top:3px}
+.empty{color:var(--dim);font-size:17px}
+
+/* ticker */
+.ticker{position:absolute;left:0;right:0;bottom:0;height:58px;display:flex;align-items:center;background:rgba(0,0,0,.5);border-top:1px solid var(--stroke);backdrop-filter:blur(14px);overflow:hidden;white-space:nowrap}
+.ticker .tl{flex:none;height:100%;display:flex;align-items:center;gap:10px;padding:0 24px;font:700 16px "JetBrains Mono",monospace;letter-spacing:.14em;color:#1a1205;background:linear-gradient(90deg,#ffe27a,var(--c));position:relative;z-index:1}
+.ticker .trk{display:inline-flex;gap:56px;padding-left:56px;animation:marquee var(--dur,80s) linear infinite}
+.ticker .it{font-size:19px;color:var(--muted);display:inline-flex;gap:12px;align-items:center}
+.ticker .it svg{width:20px;height:20px}
+.ticker .it b{color:var(--ink);font-weight:500}
+@keyframes marquee{to{transform:translateX(-50%)}}
+
+/* compact alert, bottom-left */
+.alert{position:absolute;left:44px;bottom:92px;width:640px;transform:translateX(-120%);opacity:0;z-index:30;pointer-events:none;
+  padding:18px 22px 22px;border-radius:20px;background:rgba(16,12,8,.93);border:2px solid var(--c);
+  box-shadow:0 0 0 5px color-mix(in srgb,var(--c) 14%,transparent),0 0 60px -14px var(--c),0 24px 50px -16px #000;
+  display:grid;grid-template-columns:60px 1fr;gap:3px 18px;align-items:center;transition:opacity .45s var(--ease),transform .65s var(--spring)}
+.alert.show{opacity:1;transform:none}
+.alert .ai{grid-row:span 3;width:60px;height:60px;border-radius:16px;display:grid;place-items:center;background:color-mix(in srgb,var(--c) 18%,transparent)}
+.alert .ai svg{width:34px;height:34px}
+.alert .ak{font:700 13px "JetBrains Mono",monospace;letter-spacing:.18em;text-transform:uppercase;color:var(--c)}
+.alert .at{font:700 21px/1.25 Unbounded,sans-serif;letter-spacing:-.015em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.alert .am{font:14px "JetBrains Mono",monospace;color:var(--muted)}
+.alert .bar{position:absolute;left:22px;right:22px;bottom:9px;height:3px;border-radius:9px;background:var(--stroke);overflow:hidden}
+.alert .bar i{display:block;height:100%;background:var(--c);transform-origin:left}
+.alert.show .bar i{animation:fillx var(--adur) linear forwards}
+@keyframes fillx{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.burst{position:absolute;inset:0;z-index:29;pointer-events:none;opacity:0;background:radial-gradient(circle at 18% 88%,var(--c),transparent 35%)}
+.burst.go{animation:burst 1.2s var(--ease)}
+@keyframes burst{0%{opacity:.3}100%{opacity:0}}
+
+.offline{position:absolute;inset:0;z-index:40;display:none;place-items:center;background:rgba(8,6,10,.7);font:700 26px "JetBrains Mono",monospace;color:var(--muted);letter-spacing:.1em}
+body.nolive .offline{display:grid}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="aurora"><i></i><i></i><i></i></div>
+  <div class="gridlines"></div>
+  <div class="vignette"></div>
+
+  <div class="main">
+    <div class="top">
+      <div><h1><span class="grad" id="title">Leonida Reloaded</span></h1><div class="sub">GTA VI → PC · static recompilation · dev log</div></div>
+      <div class="right">
+        <div class="pill onair off" id="onair"><span class="dot"></span><span id="onairTxt">CONNECTING</span></div>
+        <div class="pill clockp" id="clock">--:--</div>
+      </div>
+    </div>
+
+    <div class="hero">
+      <div class="glass card" id="card">
+        <div class="glow"></div>
+        <div class="ring">
+          <svg viewBox="0 0 250 250"><defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffe27a"/><stop offset=".5" stop-color="#ffb21e"/><stop offset="1" stop-color="#ff7a2f"/></linearGradient></defs>
+            <circle class="bgc" cx="125" cy="125" r="108"/><circle class="fg" id="ringFg" cx="125" cy="125" r="108" stroke-dasharray="678.6" stroke-dashoffset="678.6"/></svg>
+          <div class="pct"><div><b><span id="pct">0</span><small>%</small></b><span class="cap">OVERALL</span></div></div>
+        </div>
+        <div class="info">
+          <div><div class="k">Working on now</div><div class="stage" id="stage2">—</div></div>
+          <div class="head" id="head"></div>
+          <div class="chips">
+            <span class="chip"><b id="cCommits">0</b>commits 24h</span>
+            <span class="chip"><b id="cMerged">0</b>PRs merged 24h</span>
+            <span class="chip"><b id="cRank">—</b>in the race</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="glass build">
+        <div class="lbl"><span class="live">LIVE</span>Test bench <span class="runstate" id="runState">—</span></div>
+        <div class="frame">
+          <div class="shot"><img id="frameImg" alt=""><div class="noframe" id="noFrame">no frame captured yet</div><span class="ftag" id="frameTag"></span></div>
+          <div class="fcap" id="frameCap">Latest frame from the game</div>
+        </div>
+        <div class="stats">
+          <div class="st"><div class="k">Latest build</div><div class="v" id="bBuild">—</div><div class="s" id="bBuildSub"></div></div>
+          <div class="st"><div class="k">Current run</div><div class="v" id="bRunFps">—</div><div class="s" id="bRunSub"></div></div>
+          <div class="st"><div class="k">Test runs today</div><div class="v" id="bRuns">0</div><div class="s" id="bRunsSub"></div></div>
+          <div class="st"><div class="k">Longest run today</div><div class="v" id="bBest">—</div><div class="s" id="bBestSub"></div></div>
+          <div class="cache"><span>Shader cache</span><div class="bigbar"><i id="bBar"></i></div><b id="bCache">—</b><span class="uc">uncommitted <b id="bUnc">—</b></span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="glass road">
+      <div class="lbl">Road to playable</div>
+      <div class="track" id="track"></div>
+    </div>
+
+    <div class="bottom">
+      <div class="glass panel"><div class="lbl"><span class="live">LIVE</span>Latest commits &amp; merged PRs</div><div class="list" id="commits"></div></div>
+      <div class="glass panel notes"><div class="lbl">Dev updates</div><div class="list" id="notes"></div></div>
+    </div>
+  </div>
+
+  <div class="ticker"><div class="tl">● LEONIDA</div><div class="trk" id="ticker"></div></div>
+
+  <div class="burst" id="burst"></div>
+  <div class="alert" id="alert"><div class="ai" id="aIcon"></div><div class="ak" id="aKind"></div><div class="at" id="aTitle"></div><div class="am" id="aMeta"></div><div class="bar"><i></i></div></div>
+  <div class="offline">RECONNECTING TO TRACKER…</div>
+</div>
+
+<script>
+const params = new URLSearchParams(location.search);
+const ALERT_MS = (+params.get("alert") || 7) * 1000;
+const TEAM = params.get("team") || "leonida";
+document.documentElement.style.setProperty("--adur", ALERT_MS+"ms");
+
+const stage = document.getElementById("stage");
+function fit(){ const s = Math.min(innerWidth/1920, innerHeight/1080); stage.style.transform = `translate(-50%,-50%) scale(${s})`; }
+addEventListener("resize", fit); fit();
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const ago = iso => { if(!iso) return ""; const d=(Date.now()-new Date(iso))/1000;
+  return d<45?"just now":d<3600?Math.floor(d/60)+"m ago":d<86400?Math.floor(d/3600)+"h ago":Math.floor(d/86400)+"d ago"; };
+const P = {
+  merged:"M5.45 5.154A4.25 4.25 0 0 0 9.25 7.5h1.378a2.251 2.251 0 1 1 0 1.5H9.25A5.734 5.734 0 0 1 5 7.123v3.505a2.25 2.25 0 1 1-1.5 0V5.372a2.25 2.25 0 1 1 1.95-.218Z",
+  commit:"M11.93 8.5a4.002 4.002 0 0 1-7.86 0H.75a.75.75 0 0 1 0-1.5h3.32a4.002 4.002 0 0 1 7.86 0h3.32a.75.75 0 0 1 0 1.5Zm-1.43-.75a2.5 2.5 0 1 0-5 0 2.5 2.5 0 0 0 5 0Z",
+  note:"M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0Zm.75 4.75a.75.75 0 0 0-1.5 0v3.5c0 .2.08.39.22.53l2 2a.75.75 0 1 0 1.06-1.06L8.75 7.94Z",
+  up:"M8 1.5a.75.75 0 0 1 .53.22l5 5a.75.75 0 1 1-1.06 1.06L8.75 4.06v9.69a.75.75 0 0 1-1.5 0V4.06L3.53 7.78a.75.75 0 0 1-1.06-1.06l5-5A.75.75 0 0 1 8 1.5Z",
+  bolt:"M9.504.43a.75.75 0 0 1 .397.696L9.4 6h3.85a.75.75 0 0 1 .55 1.26l-6.5 7a.75.75 0 0 1-1.287-.616L6.6 9H2.75a.75.75 0 0 1-.55-1.26l6.5-7a.75.75 0 0 1 .804-.31Z",
+  check:"M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z",
+};
+const COL = {merged:"var(--merged)",commit:"var(--muted)",note:"var(--c)",up:"var(--c)",bolt:"var(--c)",check:"#1a1205",test:"var(--c)"};
+const icon = (k,c) => `<svg viewBox="0 0 16 16" fill="${c||COL[k]||"var(--c)"}"><path d="${P[k]||P.note}"/></svg>`;
+
+let state = null, first = true;
+const me = () => state.teams.find(t=>t.id===TEAM) || state.teams[0];
+const total = id => { const w = state.milestones.reduce((s,m)=>s+m.weight,0);
+  return state.milestones.reduce((s,m)=>s+(m.values[id]||0)*m.weight,0)/w; };
+const feed = () => state.feeds?.[TEAM];
+
+function tween(el, to, dec=0, suffix=""){
+  const from = parseFloat(el.dataset.v ?? 0) || 0; el.dataset.v = to;
+  const t0 = performance.now(), dur = 1600;
+  const step = now=>{ const k=Math.min(1,(now-t0)/dur), e=1-Math.pow(1-k,4);
+    el.innerHTML = (from+(to-from)*e).toLocaleString(undefined,{minimumFractionDigits:dec,maximumFractionDigits:dec})+suffix; if(k<1) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+}
+
+/* ---- hero ---- */
+let lastPct, lastStage;
+function renderHero(){
+  const t = me(), p = total(t.id), f = feed() || {};
+  $("title").textContent = t.name;
+  tween($("pct"), p, 1);
+  $("ringFg").style.strokeDashoffset = 678.6*(1-p/100);
+  const cur = currentStage(t.id);
+  $("stage2").textContent = cur ? `${cur.name} · ${cur.values[t.id]||0}%` : "Complete";
+  $("head").textContent = t.headline || "";
+  const cap = (n,len)=> n && n>=len ? "+" : "";
+  tween($("cCommits"), f.commits24h||0, 0, cap(f.commits24h, f.commits?.length));
+  tween($("cMerged"), f.merged24h||0, 0, cap(f.merged24h, f.pulls?.length));
+  const ranked = [...state.teams].sort((x,y)=>total(y.id)-total(x.id));
+  $("cRank").textContent = "#"+(ranked.indexOf(t)+1)+" of "+ranked.length;
+  if(!first && lastPct!==undefined && Math.abs(p-lastPct)>=0.05){
+    $("card").classList.add("ping"); setTimeout(()=>$("card").classList.remove("ping"),2200);
+    queueAlert({kind:"up", label:p>lastPct?"Progress up":"Progress revised", title:`Overall ${p.toFixed(1)}%`, meta:`${p>lastPct?"+":""}${(p-lastPct).toFixed(1)} points`});
+  }
+  if(!first && lastStage && cur && cur.name!==lastStage) queueAlert({kind:"check", label:"Milestone cleared", title:`${lastStage} done — now on ${cur.name}`, meta:"road to playable"});
+  lastPct = p; lastStage = cur?.name;
+}
+
+/* ---- live test bench: local builds, test runs, captured frames ---- */
+const dur = s => { s = Math.max(0, Math.round(s)); return s >= 3600 ? `${Math.floor(s/3600)}h ${Math.floor(s%3600/60)}m` : `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`; };
+const runLen = r => (new Date(r.lastWrite) - new Date(r.start)) / 1000;
+const FRAME_TXT = { black:"black — textures not visible yet", debug:"debug magenta fill (missing texture)", flat:"single flat colour", image:"real image on screen!" };
+let prev = {}, sawImage = false;
+function renderBuild(){
+  const L = state.live?.leonida, B = state.live?.bench, f = feed() || {};
+  // shader cache (last pipeline build run)
+  if(L){ $("bBar").style.width = L.pipelinesPct+"%"; $("bCache").textContent = `${L.pipelinesDone.toLocaleString()} / ${L.pipelinesTotal.toLocaleString()}`; }
+  $("bUnc").textContent = f.uncommitted ?? "—";
+  if(!B) return;
+
+  const b = B.builds?.[0];
+  if(b){
+    $("bBuild").innerHTML = `#${b.n} <span class="${b.failed?"badc":"okc"}">${b.failed?"✗":"✓"}</span>`;
+    $("bBuildSub").textContent = `${b.failed?"failed":"passed"}${b.elapsed!=null?` in ${b.elapsed}s`:""} · ${ago(b.t)}`;
+  }
+  const r = B.latestRun;
+  if(r){
+    $("runState").textContent = r.running ? "GAME RUNNING" : "IDLE"; $("runState").classList.toggle("on", r.running);
+    $("bRunFps").innerHTML = r.fps!=null ? `${r.fps.toFixed(0)} <small style="font-size:16px;color:var(--muted)">fps</small>` : "—";
+    $("bRunSub").textContent = `${r.frames.toLocaleString()} frames · ${dur(runLen(r))}${r.running?"":" · ended "+ago(r.lastWrite)}`;
+  }
+  tween($("bRuns"), B.runsToday||0);
+  $("bRunsSub").textContent = B.builds?.length ? `${B.builds.length}+ builds recently` : "";
+  if(B.bestToday){ $("bBest").textContent = B.bestToday.frames.toLocaleString(); $("bBestSub").textContent = `frames · ${dur(runLen(B.bestToday))} stable`; }
+
+  const fr = B.frame;
+  if(fr){
+    if(prev.frameT !== fr.t){ const src = window.STATIC_DATA ? (fr.kind==="image" ? "frame.png?t="+encodeURIComponent(fr.t) : null) : "/api/frame?t="+encodeURIComponent(fr.t);
+      if(src) $("frameImg").src = src; else $("frameImg").removeAttribute("src"); }
+    $("noFrame").style.display = "none";
+    $("frameTag").textContent = fr.kind==="image" ? "LIVE FRAME" : fr.kind; $("frameTag").className = "ftag "+fr.kind;
+    $("frameCap").textContent = `${fr.name.replace(/\.bmp$/i,"").replace("_"," ")} · ${FRAME_TXT[fr.kind]||fr.kind} · ${ago(fr.t)}`;
+  } else {   // frames folder cleared (new run starting): don't keep showing a stale frame
+    $("frameImg").removeAttribute("src"); $("noFrame").style.display = ""; $("frameTag").textContent = ""; $("frameTag").className = "ftag";
+    $("frameCap").textContent = r?.running ? "waiting for the first captured frame…" : "Latest frame from the game";
+  }
+
+  if(!first){
+    if(b && prev.build && b.n !== prev.build)
+      queueAlert({kind:b.failed?"note":"check", label:b.failed?"Build failed":"Build passed", title:`Build #${b.n} ${b.failed?"failed":"passed"}${b.elapsed!=null?` in ${b.elapsed}s`:""}`, meta:"local runtime build"});
+    if(r && prev.runStart && r.start !== prev.runStart)
+      queueAlert({kind:"bolt", label:"Test run", title:"Booting the game…", meta:"new test run started"});
+    if(r && prev.running && !r.running && r.start === prev.runStart)
+      queueAlert({kind:r.crashed?"note":"up", label:r.crashed?"Run crashed":"Run ended", title:`${r.frames.toLocaleString()} frames at ${r.fps??"?"} fps`, meta:`ran ${dur(runLen(r))}`});
+    if(fr && fr.kind==="image" && !sawImage)
+      queueAlert({kind:"check", label:"FIRST VISIBLE FRAME", title:"The game is drawing a real picture!", meta:fr.name});
+  }
+  if(fr && fr.kind==="image") sawImage = true;
+  prev = { build:b?.n, runStart:r?.start, running:r?.running, frameT:fr?.t };
+}
+
+/* ---- roadmap ---- */
+// "Working on" = the FURTHEST milestone that has started but isn't finished (where the real work is),
+// not the first unfinished one (which may just be a 95% leftover).
+function currentStage(id){
+  const ms = state.milestones;
+  for(let i = ms.length-1; i >= 0; i--){ const v = ms[i].values[id]||0; if(v>0 && v<100) return ms[i]; }
+  return ms.find(m=>(m.values[id]||0)<100);
+}
+function renderRoad(){
+  const id = me().id, ms = state.milestones, cur = currentStage(id), curI = ms.indexOf(cur);
+  $("track").innerHTML = `<div class="line"><i id="roadFill"></i></div>` + ms.map((m,i)=>{
+    const v = m.values[id]||0;
+    const cls = i===curI ? "now" : v>=100 ? "done" : v>0 ? "part" : "todo";
+    const inner = cls==="done" ? icon("check") : (cls==="now"||cls==="part") ? `<span>${v}%</span>` : (i+1);
+    return `<div class="node ${cls}"><div class="dot" style="--p:${v}%">${inner}</div><div class="nm">${esc(m.name)}</div></div>`;
+  }).join("");
+  const frac = curI < 0 ? 1 : Math.min(1, (curI + (cur.values[id]||0)/100) / (ms.length-1));
+  const fill = $("roadFill"); void fill.offsetWidth; fill.style.width = (frac*100)+"%";
+}
+
+/* ---- commits + notes ---- */
+const rowSeen = new Set(), noteSeen = new Set();
+function renderLists(){
+  const f = feed();
+  if(!f){ $("commits").innerHTML = `<div class="empty">Reading local git…</div>`; }
+  else {
+    const prBySha = new Set(f.pulls.map(p=>p.n));
+    const rows = f.commits.slice(0,8).map(c=>{
+      const m = c.title.match(/\(#(\d+)\)\s*$/), isPR = !!m && prBySha.has(+m[1]);
+      return {key:c.sha, kind:isPR?"merged":"commit", title:isPR?c.title.replace(/\s*\(#\d+\)\s*$/,""):c.title, meta:isPR?`#${m[1]} · ${ago(c.t)}`:`${c.sha} · ${ago(c.t)}`, author:c.author};
+    });
+    $("commits").innerHTML = rows.map(r=>{ const isNew = !first && !rowSeen.has(r.key); rowSeen.add(r.key);
+      return `<div class="row ${isNew?"new":""}">${icon(r.kind)}<div class="tt">${esc(r.title)}</div><div class="mm"><span class="tag s-${r.kind}">${r.kind==="merged"?"PR":"commit"}</span>${esc(r.meta)}</div></div>`; }).join("") || `<div class="empty">No commits yet.</div>`;
+    if(!first) for(const r of rows) if(!seenAlert.has(r.key)) queueAlert({kind:r.kind, label:r.kind==="merged"?"PR merged":"New commit", title:r.title, meta:`${r.author||""} · ${r.meta}`});
+    rows.forEach(r=>seenAlert.add(r.key));
+  }
+  const notes = state.events.filter(e=>e.team===TEAM).sort((a,b)=>new Date(b.t)-new Date(a.t)).slice(0,6);
+  $("notes").innerHTML = notes.map(e=>`<div class="ev"><span class="nd"></span><div><div class="tx">${esc(e.text)}</div><div class="mm">${ago(e.t)}</div></div></div>`).join("") || `<div class="empty">No updates yet.</div>`;
+  for(const e of notes){ const k = e.t+e.text; if(!first && !noteSeen.has(k)) queueAlert({kind:"note", label:"Dev update", title:e.text, meta:"just posted"}); noteSeen.add(k); }
+}
+const seenAlert = new Set();
+
+function renderTicker(){
+  const f = feed(); if(!f) return;
+  const items = f.commits.slice(0,14);
+  const html = items.map(c=>`<span class="it">${icon(/\(#\d+\)\s*$/.test(c.title)?"merged":"commit")}<b>${esc(c.title)}</b><span>${ago(c.t)}</span></span>`).join("");
+  if(!html || $("ticker").dataset.h===html) return;
+  $("ticker").dataset.h = html; $("ticker").innerHTML = html+html;
+  $("ticker").style.setProperty("--dur", Math.max(50, items.length*9)+"s");
+}
+
+/* ---- alerts ---- */
+const alertQ = []; let alerting = false;
+function queueAlert(a){ if(alertQ.length < 8) alertQ.push(a); if(!alerting) nextAlert(); }
+function nextAlert(){
+  const a = alertQ.shift(); if(!a){ alerting = false; return; }
+  alerting = true;
+  if(document.hidden){ setTimeout(nextAlert, 300); return; }
+  const el = $("alert"), burst = $("burst");
+  $("aIcon").innerHTML = icon(a.kind, a.kind==="check" ? "var(--c)" : undefined);
+  $("aKind").textContent = `${a.label} · ${me().name}`;
+  $("aTitle").textContent = a.title; $("aMeta").textContent = a.meta || "";
+  const bar = el.querySelector(".bar i"); bar.style.animation = "none"; void bar.offsetWidth; bar.style.animation = "";
+  el.classList.remove("show"); burst.classList.remove("go"); void el.offsetWidth;
+  el.classList.add("show"); burst.classList.add("go");
+  setTimeout(()=>{ el.classList.remove("show"); setTimeout(nextAlert, 700); }, ALERT_MS);
+}
+
+function render(){
+  if(!state) return;
+  renderHero(); renderBuild(); renderRoad(); renderLists(); renderTicker();
+  first = false;
+}
+function setLive(on){ $("onair").classList.toggle("off", !on); $("onairTxt").textContent = on ? "LIVE" : "OFFLINE"; document.body.classList.toggle("nolive", !on && !state); }
+// Static mode (GitHub Pages): no server; poll a published data.json snapshot instead.
+function staticPoll(apply){
+  const load = async()=>{
+    try{
+      const r = await fetch(window.STATIC_DATA+"?t="+Date.now(), {cache:"no-store"});
+      const d = await r.json();
+      apply(d, Date.now()-new Date(d.serverTime||d.updated) < 20*60e3);   // "live" if snapshot < 20 min old
+    }catch{ setLive(false); }
+  };
+  load(); setInterval(load, 60000);
+}
+function connect(){
+  if(window.STATIC_DATA) return staticPoll((d,fresh)=>{ state=d; setLive(fresh); render(); });
+  const es = new EventSource("/api/stream");
+  es.onopen = () => setLive(true);
+  es.onmessage = e => { state = JSON.parse(e.data); setLive(true); render(); };
+  es.addEventListener("alert", e => { const a = JSON.parse(e.data); queueAlert({kind:"note", label:"Test", title:a.title, meta:a.meta}); });
+  es.onerror = () => setLive(false);
+}
+const tick = ()=>{ $("clock").textContent = new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"}); };
+setInterval(tick, 1000); tick();
+setInterval(()=>{ if(state){ renderLists(); document.querySelectorAll("[data-ago]").forEach(el=>el.textContent = ago(el.dataset.ago)); } }, 60000);
+connect();
+</script>
+</body>
+</html>
